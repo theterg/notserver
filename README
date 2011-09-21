@@ -1,0 +1,3 @@
+Notserver (notification server)
+
+A python-twisted server/client used to monitor a log file for changes.  This is intented for persistently transmitting irssi notifications via fnotify.pl, but is somewhat application agnostic.  Future features include ubuntu messaging notifications, queueing of messages when no clients are online, a file for valid user/passes, and user groups that affect message queueing (priority).

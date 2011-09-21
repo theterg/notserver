@@ -44,7 +44,7 @@ class WatcherClientProtocol(Protocol):
         elif not self.started:
             print data
             if self.factory.gtk:
-                try:
+                try:                #TODO - can we do this globally?
                     import gtk, pygtk, os, os.path, pynotify
                     pygtk.require('2.0')
                 except:

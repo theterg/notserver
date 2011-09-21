@@ -1,3 +1,16 @@
 Notserver (notification server)
 
 A python-twisted server/client used to monitor a log file for changes.  This is intented for persistently transmitting irssi notifications via fnotify.pl, but is somewhat application agnostic.  Future features include ubuntu messaging notifications, queueing of messages when no clients are online, a file for valid user/passes, and user groups that affect message queueing (priority).
+
+TO USE:
+launch notserver with: python notserver.py --port=2346 --iface=192.168.0.100 ~/.irssi/fnotify
+where '2346' is the port to listen on (2346 being my preferred default),
+'192.168.0.100' is the IP address of the interface to listen on,
+'~/.irssi/fnotify' is the file to watch for changes (look up fnotify.pl to use with irssi)
+
+Then on the client side:
+python notclient.py --port=2346 192.168.0.100
+where '2346' is the port specified above,
+'192.168.0.100' is the host to connect to
+
+Currently the username/pass are hardcoded, and the client merely prints each new line in the file to be watched.

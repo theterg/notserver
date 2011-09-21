@@ -38,15 +38,10 @@ class WatcherClientProtocol(Protocol):
         elif not self.started:
             print data
         
-    #@defer.inlineCallbacks
     def connectionMade(self):
         print "Client connected"
         self.connected = True
-        #yield wait(1)
-        print "sending user"
         self.transport.write("terg\r\n")
-        #yield wait(1)
-        print "sending pass"
         self.transport.write("terg\r\n")
         from twisted.internet import reactor
         reactor.callInThread(self.pingerThread)

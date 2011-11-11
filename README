@@ -12,6 +12,8 @@ Then on the client side:
 python notclient.py --port=2346 192.168.0.100
 where '2346' is the port specified above,
 '192.168.0.100' is the host to connect to
-notclient now requires pynotify - if you want to disable this functionality, add -n to the arguments.  Default action is to launch a GTK notification, using -n will merely print to console.
 
 Currently the username/pass are hardcoded, and the client merely prints each new line in the file to be watched.
+
+To Deploy:
+The only thing you will need to do is to copy notclient.desktop into /usr/share/applications/ if you want to use notclient.py

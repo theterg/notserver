@@ -1,0 +1,8 @@
+[Desktop Entry]
+Name=Notclient
+Exec="~/build/python/notclient/notclient.py terg.is"
+Icon=news-feed
+Terminal=false
+Type=Application
+StartupNotify=true
+OnlyShowIn=GNOME;

@@ -1,14 +1,19 @@
 #!/usr/bin/python
 
-import optparse, os, time
-
+import optparse, os, time, sys
+import indicate 
+#python-indicate, the reason for this example
+from twisted.internet import gtk2reactor
+gtk2reactor.install()
+from twisted.internet import reactor
 from twisted.internet.protocol import ClientFactory, Protocol
 from twisted.internet import defer
+import os.path, pynotify, gtk, pygtk
 
+notifications = {}
 
 def parse_args():
-    usage = """usage: (-n) (--port=<port number>) <host>
--n or --nogtk will disable pynotify notifications (omitting requires pynotify)
+    usage = """usage: (--port=<port number>) <host>
 --port will default to 2346
 """
 
@@ -16,9 +21,6 @@ def parse_args():
 
     help = "The port to listen on. Default to a random available port."
     parser.add_option('--port', type='int', help=help)
-
-    help = "Disable the GTK pynotify notification"
-    parser.add_option('-n', '--nogtk', action="store_false", default=True, dest="gtk", help=help)
 
     options, args = parser.parse_args()
 
@@ -39,27 +41,22 @@ class WatcherClientProtocol(Protocol):
         data = data.replace("\n","")
         if (data.find("PONG") != -1):
             self.pinged = True
-        elif (data.find("*****") != -1):
             self.started = False
         elif not self.started:
             print data
-            if self.factory.gtk:
-                try:
-                    import gtk, pygtk, os, os.path, pynotify
-                    pygtk.require('2.0')
-                except:
-                    print "Error: need python-notify, python-gtk2 and gtk"
-                    return
-                where = data[:data.find(' ')]
-                message = data[data.find(' ')+1:]
-                n = pynotify.Notification(where, message)
-                n.set_urgency(pynotify.URGENCY_NORMAL)
-                n.set_timeout(5000)
-                n.set_category("device")
-                helper = gtk.Button()
-                icon = helper.render_icon(gtk.STOCK_DIALOG_WARNING, gtk.ICON_SIZE_DIALOG)
-                n.set_icon_from_pixbuf(icon)
-                n.show()
+            where = data[:data.find(' ')]
+            message = data[data.find(' ')+1:]
+            addNotification(where)
+            if where[0] != '#':
+                message = "Private message"
+            n = pynotify.Notification(where, message)
+            n.set_urgency(pynotify.URGENCY_NORMAL)
+            n.set_timeout(5000)
+            n.set_category("device")
+            helper = gtk.Button()
+            icon = helper.render_icon(gtk.STOCK_DIALOG_WARNING, gtk.ICON_SIZE_DIALOG)
+            n.set_icon_from_pixbuf(icon)
+            n.show()
 
     def connectionMade(self):
         print "Client connected"
@@ -87,8 +84,8 @@ class AggressiveClientFactory(ClientFactory):
 
     protocol = WatcherClientProtocol
 
-    def __init__(self, gtk=True):
-        self.gtk = gtk
+    #def __init__(self):
+        #nothing
 
     @defer.inlineCallbacks
     def clientConnectionFailed(self, connector, reason):
@@ -113,25 +110,49 @@ def wait(seconds, result=None):
 
 def main():
     options, hostname = parse_args()
-    
-    if options.gtk:
-        print "enabling GTK"
-        try:
-            import gtk, pygtk, os, os.path, pynotify
-            pygtk.require('2.0')
-        except:
-            print "Error: need python-notify, python-gtk2 and gtk"
-            sys.exit(1)
-        if not pynotify.init("Timekpr notification"):
-            sys.exit(1)
+   
+    pynotify.init("Timekpr notification")
+    configureIndicate()
 
     from twisted.internet import reactor
 
-    factory = AggressiveClientFactory(options.gtk)
+    factory = AggressiveClientFactory()
     reactor.connectTCP(hostname, options.port or 2346, factory)
 
     reactor.run()
 
+def clearNotifications():
+    nots = dict(notifications)
+    for item in nots:
+        notifications[item].set_property("draw-attention","false")
+        del notifications[item]
+    del(nots)
+
+def serverClick(*args):
+    clearNotifications()
+
+def labelClick(indicator, time):
+    clearNotifications()
+
+def addNotification(who):
+    if not who in notifications:
+        notifications[who] = indicate.Indicator()
+        notifications[who].set_property("name", who)
+        notifications[who].set_property("count", "1")
+        notifications[who].label = who
+        notifications[who].connect("user-display", labelClick)
+        notifications[who].set_property("draw-attention","true")
+        notifications[who].show()
+    else:
+        amt = int(notifications[who].get_property("count")) + 1
+        notifications[who].set_property("count", str(amt))
+        notifications[who].set_property("draw-attention","true")
+
+def configureIndicate():
+    server = indicate.indicate_server_ref_default()
+    server.set_type("message.mail")
+    server.set_desktop_file("/usr/share/applications/notclient.desktop")
+    server.connect("server-display", serverClick)
 
 if __name__ == '__main__':
     main()

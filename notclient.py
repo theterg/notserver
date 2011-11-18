@@ -11,6 +11,7 @@ from twisted.internet import defer
 import os.path, pynotify, gtk, pygtk
 
 notifications = {}
+notificationsecs = 5
 
 def parse_args():
     usage = """usage: (--port=<port number>) <host>
@@ -36,6 +37,8 @@ class WatcherClientProtocol(Protocol):
     pinged = False
     connected = False
     started = True
+    lastmessage = 0
+    messageHistory = ""
     
     def dataReceived(self, data):
         data = data.replace("\n","")
@@ -49,14 +52,22 @@ class WatcherClientProtocol(Protocol):
             addNotification(where)
             if where[0] != '#':
                 message = "Private message"
-            n = pynotify.Notification(where, message)
-            n.set_urgency(pynotify.URGENCY_NORMAL)
-            n.set_timeout(5000)
-            n.set_category("device")
-            helper = gtk.Button()
-            icon = helper.render_icon(gtk.STOCK_DIALOG_WARNING, gtk.ICON_SIZE_DIALOG)
-            n.set_icon_from_pixbuf(icon)
-            n.show()
+            if ((time.time() - self.lastmessage) < notificationsecs):
+                self.messageHistory = self.messageHistory + "\n" + message
+                self.n.update(where, self.messageHistory)
+                #self.n.update(where, "UPDATED")
+                self.n.show()
+            else:
+                self.messageHistory = message
+                self.n = pynotify.Notification(where, message)
+                self.n.set_urgency(pynotify.URGENCY_NORMAL)
+                self.n.set_timeout(notificationsecs * 1000)
+                self.n.set_category("device")
+                helper = gtk.Button()
+                icon = helper.render_icon(gtk.STOCK_DIALOG_WARNING, gtk.ICON_SIZE_DIALOG)
+                self.n.set_icon_from_pixbuf(icon)
+                self.n.show()
+                self.lastmessage = time.time()
 
     def connectionMade(self):
         print "Client connected"
